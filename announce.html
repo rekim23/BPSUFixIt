@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BPSU FixIt | Announcements</title>
+    <link rel="stylesheet" type="text/css" href="css/announce.css">
+    <link rel="stylesheet" type="text/css" href="css/general.css">
+  </head>
+  <body>
+    <header>
+      <h1><a href="index.html" class="logo-link">BPSU FixIt</a></h1>
+      <nav>
+        <a href="home.html">Home</a>
+        <a href="report.html">Report</a>
+        <a href="announce.html" class="active">Announcements</a>
+        <a href="maintenance.html">Maintenance</a>
+      </nav>
+    </header>
+    <section class="announce-section">
+      <h2>Campus Announcements</h2>
+      <p>Stay updated with the latest events, schedules, and important notices.</p>
+      <div class="announcement-list" id="announcementList">
+        <!-- Sample Announcements -->
+        <div class="announcement">
+          <h3>📢 Power Interruption on Main Campus</h3>
+          <p>There will be a scheduled power interruption on October 30, 2025, from 9:00 AM to 2:00 PM due to electrical maintenance.</p>
+          <span class="date">Posted: Oct 25, 2025</span>
+          <button class="delete-btn">Delete</button>
+        </div>
+        <div class="announcement">
+          <h3>🎓 Midterm Exam Schedule Released</h3>
+          <p>The official midterm exam schedule is now available. Please check the Academic Office section for full details.</p>
+          <span class="date">Posted: Oct 24, 2025</span>
+          <button class="delete-btn">Delete</button>
+        </div>
+        <div class="announcement">
+          <h3>🏫 Campus Clean-Up Drive</h3>
+          <p>Join us this Friday for the campus-wide clean-up drive! Volunteers will meet at the gym at 8:00 AM.</p>
+          <span class="date">Posted: Oct 20, 2025</span>
+          <button class="delete-btn">Delete</button>
+        </div>
+      </div>
+      <form id="newAnnouncementForm">
+        <h3>Add New Announcement</h3>
+        <input type="text" id="title" placeholder="Title" required />
+        <textarea id="content" rows="3" placeholder="Content" required></textarea>
+        <button type="submit" class="btn">Post Announcement</button>
+      </form>
+    </section>
+    <footer>
+      <p>© 2025 Bataan Peninsula State University | BPSU FixIt Project</p>
+    </footer>
+    <script>
+      const form = document.getElementById("newAnnouncementForm");
+      const list = document.getElementById("announcementList");
+      const role = localStorage.getItem("loggedInUser");
+      // Hide form & delete buttons if Reporter/User
+      if (role !== "maintenance") {
+        form.style.display = "none";
+        document.querySelectorAll(".delete-btn").forEach(btn => {
+          btn.style.display = "none";
+        });
+      }     
+      function addDeleteButtons() {
+        const deleteButtons = document.querySelectorAll(".delete-btn");
+        deleteButtons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            btn.parentElement.remove();
+            saveAnnouncements();
+          });
+        });
+      }
+      function saveAnnouncements() {
+        const data = [];
+        document.querySelectorAll(".announcement").forEach(div => {
+          const title = div.querySelector("h3").innerText;
+          const content = div.querySelector("p").innerText;
+          const date = div.querySelector(".date").innerText;
+          data.push({ title, content, date });
+        });
+        localStorage.setItem("announcements", JSON.stringify(data));
+      }
+      function loadAnnouncements() {
+        const data = JSON.parse(localStorage.getItem("announcements")) || [];
+        if (data.length > 0) {
+          list.innerHTML = "";
+          data.forEach(item => {
+            const div = document.createElement("div");
+            div.classList.add("announcement");
+            div.innerHTML = `
+              <h3>${item.title}</h3>
+              <p>${item.content}</p>
+              <span class="date">${item.date}</span>
+              <button class="delete-btn">Delete</button>
+            `;
+            list.appendChild(div);
+          });
+          if (role !== "maintenance") {
+            document.querySelectorAll(".delete-btn").forEach(btn => {
+              btn.style.display = "none";
+            });
+          }
+          addDeleteButtons();
+        } else {
+          addDeleteButtons();
+        }
+      }
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const title = document.getElementById("title").value.trim();
+        const content = document.getElementById("content").value.trim();
+        const date = new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+
+        if (title && content) {
+          const div = document.createElement("div");
+          div.classList.add("announcement");
+          div.innerHTML = `
+            <h3>🆕 ${title}</h3>
+            <p>${content}</p>
+            <span class="date">Posted: ${date}</span>
+            <button class="delete-btn">Delete</button>
+          `;
+          list.prepend(div);
+          form.reset();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          addDeleteButtons();
+          saveAnnouncements();
+        }
+      });
+      loadAnnouncements();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BPSU FixIt | Home</title>
+    <link rel="stylesheet" type="text/css" href="css/home.css">
+    <link rel="stylesheet" type="text/css" href="css/general.css">
+  </head>
+  <body>
+    <header>
+      <h1><a href="index.html" class="logo-link">BPSU FixIt</a></h1>
+      <nav>
+        <a href="home.html" class="active">Home</a>
+        <a href="report.html">Report</a>
+        <a href="announce.html">Announcements</a>
+        <a href="maintenance.html">Maintenance</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h2>Welcome to BPSU FixIt</h2>
+      <p>Report facility issues, view announcements, and stay updated all in one place.</p>
+      <a href="report.html" class="btn">Report a Problem</a>
+    </section>
+
+    <section class="features">
+      <div class="card">
+        <h3>Fast Reporting</h3>
+        <p>Submit facility issues quickly and easily with details and photos.</p>
+      </div>
+      <div class="card">
+        <h3>Stay Updated</h3>
+        <p>Check announcements, schedules, and upcoming events in one hub.</p>
+      </div>
+      <div class="card">
+        <h3>For Everyone</h3>
+        <p>Built for BPSU students, teachers, and staff to improve communication.</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2025 Bataan Peninsula State University | BPSU FixIt Project</p>
+    </footer>
+
+    <script>
+      // Highlight current nav link
+      const links = document.querySelectorAll("nav a");
+      links.forEach(link => {
+        if (link.href === window.location.href) link.classList.add("active");
+      });
+    </script>
+  </body>
+</html>

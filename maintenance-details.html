@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Details | BPSU FixIt</title>
+    <link rel="stylesheet" href="css/maintenance-details.css">
+    <link rel="stylesheet" type="text/css" href="css/general.css">
+    <style>
+      .status.ongoing { color: orange; font-weight: bold; }
+      .status.completed { color: green; font-weight: bold; }
+      .status.pending { color: red; font-weight: bold; }
+      .image-gallery img { width: 200px; margin: 5px; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1><a href="index.html" class="logo-link">BPSU FixIt</a></h1>
+      <nav>
+        <a href="home.html">Home</a>
+        <a href="report.html">Report</a>
+        <a href="announce.html">Announcements</a>
+        <a href="maintenance.html" class="active">Maintenance</a>
+      </nav>
+    </header>
+    <section class="details-section">
+      <h2 id="title"></h2>
+      <span id="status" class="status"></span>
+      <p id="desc" class="desc"></p>
+      <div id="gallery" class="image-gallery"></div>
+      <div id="reporterInfo"></div>
+      <button id="updateStatusBtn" class="update-status" style="display:none;">Update Status</button>
+      <button id="deleteReportBtn" class="delete-report" style="display:none;">Delete Report</button>
+      <a href="maintenance.html" class="btn">← Back to Maintenance List</a>
+    </section>
+    <footer>
+      <p>© 2025 Bataan Peninsula State University | BPSU FixIt Project</p>
+    </footer>
+    <script>
+      const userRole = localStorage.getItem("loggedInUser");
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      let dynamicReports = JSON.parse(localStorage.getItem("maintenanceReports")) || [];
+      let report = dynamicReports.find(r => r.id == id);
+      if(!report) {
+        report = maintenanceData[id];
+        if(!report){
+          alert("Report not found!");
+          window.location.href = "maintenance.html";
+        }
+      }
+      const titleEl = document.getElementById("title");
+      const descEl = document.getElementById("desc");
+      const statusEl = document.getElementById("status");
+      const galleryEl = document.getElementById("gallery");
+      const reporterInfoEl = document.getElementById("reporterInfo");
+      const updateBtn = document.getElementById("updateStatusBtn");
+      const deleteBtn = document.getElementById("deleteReportBtn");
+      titleEl.textContent = report.title;
+      descEl.textContent = report.desc;
+      function updateStatusUI(status){
+        statusEl.textContent = `Status: ${status}`;
+        statusEl.classList.remove("pending","ongoing","completed");
+        statusEl.classList.add(status.toLowerCase());
+      }
+      updateStatusUI(report.status);
+      galleryEl.innerHTML = "";
+      if(report.images && report.images.length > 0){
+        report.images.forEach(src=>{
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = report.title;
+          galleryEl.appendChild(img);
+        });
+      }
+      if(userRole === "maintenance" && dynamicReports.find(r => r.id == id)) {
+        const dynamicReport = dynamicReports.find(r => r.id == id);
+
+        reporterInfoEl.innerHTML = `
+          <h3>Reporter Info:</h3>
+          <p>Name: ${dynamicReport.name || "N/A"}</p>
+          <p>Email: ${dynamicReport.email || "N/A"}</p>
+        `;
+
+        updateBtn.style.display = "inline-block";
+        deleteBtn.style.display = "inline-block";
+
+        // Update status
+        updateBtn.addEventListener("click", ()=>{
+          const newStatus = prompt("Enter new status: Ongoing, Completed, Pending", dynamicReport.status);
+          if(newStatus && ["Ongoing","Completed","Pending"].includes(newStatus)){
+            dynamicReport.status = newStatus;
+            localStorage.setItem("maintenanceReports", JSON.stringify(dynamicReports));
+            updateStatusUI(newStatus);
+            alert("Status updated!");
+          } else {
+            alert("Invalid status!");
+          }
+        });
+        deleteBtn.addEventListener("click", ()=>{
+          if(confirm("Are you sure you want to delete this report?")){
+            dynamicReports = dynamicReports.filter(r => r.id != dynamicReport.id);
+            localStorage.setItem("maintenanceReports", JSON.stringify(dynamicReports));
+            alert("Report deleted!");
+            window.location.href = "maintenance.html";
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
