@@ -7,22 +7,8 @@
     <link rel="stylesheet" type="text/css" href="css/report.css">
     <link rel="stylesheet" type="text/css" href="css/general.css">
 
-    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js"></script>
-
-    <script>
-      const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
-      };
-
-      const app = firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
   </head>
 
   <body>
@@ -70,54 +56,80 @@
     </footer>
 
     <script>
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+
       const form = document.getElementById("reportForm");
       const message = document.getElementById("successMessage");
 
       form.addEventListener("submit", (e) => {
         e.preventDefault();
-        const photoInput = document.getElementById("photo");
-        const images = [];
 
-        if (photoInput.files.length > 0) {
-          // Read each photo as Base64 string
-          for (let i = 0; i < photoInput.files.length; i++) {
-            const file = photoInput.files[i];
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const location = document.getElementById("location").value;
+        const issue = document.getElementById("issue").value;
+        const photoInput = document.getElementById("photo");
+
+        const reportData = {
+          name,
+          email,
+          location,
+          issue,
+          title: `🛠 ${issue.substring(0, 30)}...`,
+          desc: issue,
+          status: "Pending",
+          timestamp: new Date().toISOString(),
+          images: []
+        };
+
+        const files = photoInput.files;
+        if (files.length > 0) {
+          const readers = [];
+          for (let i = 0; i < files.length; i++) {
             const reader = new FileReader();
-            reader.onload = function (event) {
-              images.push(event.target.result);
-              if (images.length === photoInput.files.length) {
-                saveReport(images);
+            reader.onload = (event) => {
+              reportData.images.push(event.target.result);
+              if (reportData.images.length === files.length) {
+                saveToFirestore(reportData);
               }
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(files[i]);
+            readers.push(reader);
           }
         } else {
-          saveReport([]);
+          saveToFirestore(reportData);
         }
       });
 
-      function saveReport(images) {
-        const reportData = {
-          title: `🛠 ${document.getElementById("issue").value.substring(0, 30)}...`,
-          location: document.getElementById("location").value,
-          status: "Pending",
-          desc: document.getElementById("issue").value,
-          images: images,
-          name: document.getElementById("name").value,
-          email: document.getElementById("email").value,
-          timestamp: new Date().toISOString()
-        };
-
-        db.collection("reports").add(reportData)
+      function saveToFirestore(data) {
+        db.collection("reports")
+          .add(data)
           .then(() => {
+            document.getElementById("reportForm").reset();
             message.classList.remove("hidden");
-            form.reset();
           })
           .catch((error) => {
-            console.error("Error adding report: ", error);
-            alert("❌ Error submitting report. Please try again.");
+            console.error("Error submitting report: ", error);
+            alert("❌ Failed to submit report. Please try again.");
           });
       }
     </script>
+
+    <style>
+      .hidden {
+        display: none;
+      }
+    </style>
   </body>
 </html>
+
