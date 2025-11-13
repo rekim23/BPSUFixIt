@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BPSU FixIt | Report</title>
+    <link rel="stylesheet" type="text/css" href="css/report.css">
+    <link rel="stylesheet" type="text/css" href="css/general.css">
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+
+      const app = firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+    </script>
+  </head>
+
+  <body>
+    <header>
+      <h1><a href="index.html" class="logo-link">BPSU FixIt</a></h1>
+      <nav>
+        <a href="home.html">Home</a>
+        <a href="report.html" class="active">Report</a>
+        <a href="announce.html">Announcements</a>
+        <a href="maintenance.html">Maintenance</a>
+      </nav>
+    </header>
+
+    <section class="report-container">
+      <h2>Report a Facility Problem</h2>
+      <p>Please fill out the form below to report any damaged or malfunctioning school facility.</p>
+
+      <form id="reportForm">
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" required />
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" required />
+
+        <label for="location">Location (Building/Room):</label>
+        <input type="text" id="location" required />
+
+        <label for="issue">Describe the Issue:</label>
+        <textarea id="issue" rows="4" required></textarea>
+
+        <label for="photo">Upload a Photo (optional):</label>
+        <input type="file" id="photo" accept="image/*" multiple />
+
+        <button type="submit" class="btn">Submit Report</button>
+      </form>
+
+      <div id="successMessage" class="hidden">
+        <h3>✅ Report Submitted Successfully!</h3>
+        <p>Thank you for helping keep BPSU facilities in good condition.</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2025 Bataan Peninsula State University | BPSU FixIt Project</p>
+    </footer>
+
+    <script>
+      const form = document.getElementById("reportForm");
+      const message = document.getElementById("successMessage");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const photoInput = document.getElementById("photo");
+        const images = [];
+
+        if (photoInput.files.length > 0) {
+          // Read each photo as Base64 string
+          for (let i = 0; i < photoInput.files.length; i++) {
+            const file = photoInput.files[i];
+            const reader = new FileReader();
+            reader.onload = function (event) {
+              images.push(event.target.result);
+              if (images.length === photoInput.files.length) {
+                saveReport(images);
+              }
+            };
+            reader.readAsDataURL(file);
+          }
+        } else {
+          saveReport([]);
+        }
+      });
+
+      function saveReport(images) {
+        const reportData = {
+          title: `🛠 ${document.getElementById("issue").value.substring(0, 30)}...`,
+          location: document.getElementById("location").value,
+          status: "Pending",
+          desc: document.getElementById("issue").value,
+          images: images,
+          name: document.getElementById("name").value,
+          email: document.getElementById("email").value,
+          timestamp: new Date().toISOString()
+        };
+
+        db.collection("reports").add(reportData)
+          .then(() => {
+            message.classList.remove("hidden");
+            form.reset();
+          })
+          .catch((error) => {
+            console.error("Error adding report: ", error);
+            alert("❌ Error submitting report. Please try again.");
+          });
+      }
+    </script>
+  </body>
+</html>

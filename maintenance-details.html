@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maintenance Details | BPSU FixIt</title>
+    <link rel="stylesheet" href="css/maintenance-details.css" />
+    <link rel="stylesheet" type="text/css" href="css/general.css" />
+    <style>
+      .status.ongoing { color: orange; font-weight: bold; }
+      .status.completed { color: green; font-weight: bold; }
+      .status.pending { color: red; font-weight: bold; }
+      .image-gallery img { width: 200px; margin: 5px; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1><a href="index.html" class="logo-link">BPSU FixIt</a></h1>
+      <nav>
+        <a href="home.html">Home</a>
+        <a href="report.html">Report</a>
+        <a href="announce.html">Announcements</a>
+        <a href="maintenance.html" class="active">Maintenance</a>
+      </nav>
+    </header>
+
+    <section class="details-section">
+      <h2 id="title"></h2>
+      <span id="status" class="status"></span>
+      <p id="desc" class="desc"></p>
+      <div id="gallery" class="image-gallery"></div>
+      <div id="reporterInfo"></div>
+      <button id="updateStatusBtn" class="update-status" style="display:none;">Update Status</button>
+      <button id="deleteReportBtn" class="delete-report" style="display:none;">Delete Report</button>
+      <a href="maintenance.html" class="btn">← Back to Maintenance List</a>
+    </section>
+
+    <footer>
+      <p>© 2025 Bataan Peninsula State University | BPSU FixIt Project</p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+
+      const app = firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+
+      const userRole = localStorage.getItem("loggedInUser");
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+
+      const titleEl = document.getElementById("title");
+      const descEl = document.getElementById("desc");
+      const statusEl = document.getElementById("status");
+      const galleryEl = document.getElementById("gallery");
+      const reporterInfoEl = document.getElementById("reporterInfo");
+      const updateBtn = document.getElementById("updateStatusBtn");
+      const deleteBtn = document.getElementById("deleteReportBtn");
+
+      function updateStatusUI(status) {
+        statusEl.textContent = `Status: ${status}`;
+        statusEl.className = "status " + status.toLowerCase();
+      }
+
+      // ✅ Fetch the report from Firestore
+      db.collection("reports").doc(id).get().then((doc) => {
+        if (!doc.exists) {
+          alert("Report not found!");
+          window.location.href = "maintenance.html";
+          return;
+        }
+
+        const report = doc.data();
+
+        titleEl.textContent = report.title;
+        descEl.textContent = report.desc;
+        updateStatusUI(report.status);
+
+
+        if (report.images && report.images.length > 0) {
+          report.images.forEach((src) => {
+            const img = document.createElement("img");
+            img.src = src;
+            img.alt = report.title;
+            galleryEl.appendChild(img);
+          });
+        }
+
+
+        reporterInfoEl.innerHTML = `
+          <h3>Reporter Info:</h3>
+          <p><b>Name:</b> ${report.name || "N/A"}</p>
+          <p><b>Email:</b> ${report.email || "N/A"}</p>
+          <p><b>Location:</b> ${report.location || "N/A"}</p>
+        `;
+
+        if (userRole === "maintenance") {
+          updateBtn.style.display = "inline-block";
+          deleteBtn.style.display = "inline-block";
+
+          updateBtn.addEventListener("click", () => {
+            const newStatus = prompt("Enter new status (Pending / Ongoing / Completed):", report.status);
+            if (newStatus && ["Pending", "Ongoing", "Completed"].includes(newStatus)) {
+              db.collection("reports").doc(id).update({ status: newStatus });
+              updateStatusUI(newStatus);
+              alert("Status updated!");
+            } else {
+              alert("Invalid status!");
+            }
+          });
+
+          deleteBtn.addEventListener("click", () => {
+            if (confirm("Are you sure you want to delete this report?")) {
+              db.collection("reports").doc(id).delete().then(() => {
+                alert("Report deleted!");
+                window.location.href = "maintenance.html";
+              });
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
