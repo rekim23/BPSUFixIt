@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+      const app = firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BPSU FixIt | Report</title>
@@ -75,12 +89,19 @@
       name: document.getElementById("name").value,
       email: document.getElementById("email").value
     };
-    let reports = JSON.parse(localStorage.getItem("maintenanceReports")) || [];
-    reports.push(reportData);
-    localStorage.setItem("maintenanceReports", JSON.stringify(reports));
-    message.classList.remove("hidden");
-    form.reset();
-  }
+    db.collection("reports").add(reportData)
+      .then(() => {
+        message.classList.remove("hidden");
+        form.reset();
+      })
+      .catch((error) => {
+        console.error("Error adding report: ", error);
+      });
+
+        message.classList.remove("hidden");
+        form.reset();
+      }
   </script>
   </body>
 </html>
+
