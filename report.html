@@ -7,8 +7,77 @@
     <link rel="stylesheet" type="text/css" href="css/report.css">
     <link rel="stylesheet" type="text/css" href="css/general.css">
 
-    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+      import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("reportForm");
+        const message = document.getElementById("successMessage");
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const name = document.getElementById("name").value;
+          const email = document.getElementById("email").value;
+          const location = document.getElementById("location").value;
+          const issue = document.getElementById("issue").value;
+          const photoInput = document.getElementById("photo");
+
+          const reportData = {
+            name,
+            email,
+            location,
+            issue,
+            title: `🛠 ${issue.substring(0, 30)}...`,
+            desc: issue,
+            status: "Pending",
+            timestamp: new Date().toISOString(),
+            images: []
+          };
+
+          const files = photoInput.files;
+          if (files.length > 0) {
+            const readPromises = Array.from(files).map(file => {
+              return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+              });
+            });
+            reportData.images = await Promise.all(readPromises);
+          }
+
+          try {
+            await addDoc(collection(db, "reports"), reportData);
+            form.reset();
+            message.classList.remove("hidden");
+          } catch (error) {
+            console.error("Error adding report:", error);
+            alert("❌ Error submitting report. Check your Firebase config or connection.");
+          }
+        });
+      });
+    </script>
+
+    <style>
+      .hidden {
+        display: none;
+      }
+    </style>
   </head>
 
   <body>
@@ -54,82 +123,6 @@
     <footer>
       <p>© 2025 Bataan Peninsula State University | BPSU FixIt Project</p>
     </footer>
-
-    <script>
-      const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
-      };
-
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
-
-      const form = document.getElementById("reportForm");
-      const message = document.getElementById("successMessage");
-
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-
-        const name = document.getElementById("name").value;
-        const email = document.getElementById("email").value;
-        const location = document.getElementById("location").value;
-        const issue = document.getElementById("issue").value;
-        const photoInput = document.getElementById("photo");
-
-        const reportData = {
-          name,
-          email,
-          location,
-          issue,
-          title: `🛠 ${issue.substring(0, 30)}...`,
-          desc: issue,
-          status: "Pending",
-          timestamp: new Date().toISOString(),
-          images: []
-        };
-
-        const files = photoInput.files;
-        if (files.length > 0) {
-          const readers = [];
-          for (let i = 0; i < files.length; i++) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              reportData.images.push(event.target.result);
-              if (reportData.images.length === files.length) {
-                saveToFirestore(reportData);
-              }
-            };
-            reader.readAsDataURL(files[i]);
-            readers.push(reader);
-          }
-        } else {
-          saveToFirestore(reportData);
-        }
-      });
-
-      function saveToFirestore(data) {
-        db.collection("reports")
-          .add(data)
-          .then(() => {
-            document.getElementById("reportForm").reset();
-            message.classList.remove("hidden");
-          })
-          .catch((error) => {
-            console.error("Error submitting report: ", error);
-            alert("❌ Failed to submit report. Please try again.");
-          });
-      }
-    </script>
-
-    <style>
-      .hidden {
-        display: none;
-      }
-    </style>
   </body>
 </html>
 
