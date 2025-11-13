@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+      const app = firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BPSU FixIt | Maintenance</title>
@@ -35,54 +49,68 @@
   </footer>
 
   <script>
-  const list = document.querySelector(".maintenance-list");
-  const mode = localStorage.getItem("loggedInUser") || "reporter"; 
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+    };
 
-  function renderReports() {
-    let reports = JSON.parse(localStorage.getItem("maintenanceReports")) || [];
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    document.querySelectorAll(".maintenance-item.dynamic").forEach(el => el.remove());
+    const list = document.querySelector(".maintenance-list");
+    const mode = localStorage.getItem("loggedInUser") || "reporter"; 
 
-    reports.forEach(report => {
-      if(mode === "reporter" && report.status.toLowerCase() !== "ongoing") return;
+    function renderReports() {
+      db.collection("reports").onSnapshot((snapshot) => {
+        list.querySelectorAll(".maintenance-item.dynamic").forEach(el => el.remove());
 
-      const a = document.createElement("a");
-      a.href = `maintenance-details.html?id=${report.id}`;
-      a.classList.add("maintenance-item", report.status.toLowerCase(), "dynamic");
+        snapshot.forEach((doc) => {
+          const report = doc.data();
+          report.id = doc.id;
 
-      a.innerHTML = `
-        <h3>${report.title} - ${report.location}</h3>
-        <p>${report.desc}</p>
-        <span class="status ${report.status.toLowerCase()}">Status: ${report.status}</span>
-        ${mode === "maintenance" ? '<button class="delete-report">Delete</button><button class="update-status">Update Status</button>' : ''}
-      `;
-      list.appendChild(a);
+          // If reporter, show only ongoing
+          if (mode === "reporter" && report.status.toLowerCase() !== "ongoing") return;
 
-      if(mode === "maintenance") {
-        // Delete button
-        a.querySelector(".delete-report").addEventListener("click", e => {
-          e.preventDefault();
-          if(confirm("Are you sure you want to delete this report?")){
-            reports = reports.filter(r => r.id !== report.id);
-            localStorage.setItem("maintenanceReports", JSON.stringify(reports));
-            renderReports();
+          const a = document.createElement("a");
+          a.href = `maintenance-details.html?id=${report.id}`;
+          a.classList.add("maintenance-item", report.status.toLowerCase(), "dynamic");
+
+          a.innerHTML = `
+            <h3>${report.title} - ${report.location}</h3>
+            <p>${report.desc}</p>
+            <span class="status ${report.status.toLowerCase()}">Status: ${report.status}</span>
+            ${mode === "maintenance" ? `
+              <button class="delete-report">Delete</button>
+              <button class="update-status">Update Status</button>` : ""}
+          `;
+          list.appendChild(a);
+
+          if (mode === "maintenance") {
+            // Delete report
+            a.querySelector(".delete-report").addEventListener("click", (e) => {
+              e.preventDefault();
+              if (confirm("Are you sure you want to delete this report?")) {
+                db.collection("reports").doc(report.id).delete();
+              }
+            });
+
+            // Update status
+            a.querySelector(".update-status").addEventListener("click", (e) => {
+              e.preventDefault();
+              const newStatus = prompt("Enter new status (Pending / Ongoing / Completed):", report.status);
+              if (newStatus && ["Pending", "Ongoing", "Completed"].includes(newStatus)) {
+                db.collection("reports").doc(report.id).update({ status: newStatus });
+              } else {
+                alert("Invalid status!");
+              }
+            });
           }
         });
-
-        a.querySelector(".update-status").addEventListener("click", e => {
-          e.preventDefault();
-          const newStatus = prompt("Enter new status (Pending / Ongoing / Completed):", report.status);
-          if(newStatus && ["Pending","Ongoing","Completed"].includes(newStatus)){
-            report.status = newStatus;
-            localStorage.setItem("maintenanceReports", JSON.stringify(reports));
-            renderReports();
-          } else alert("Invalid status!");
-        });
-      }
-    });
-  }
-
-  renderReports();
+      });
+    }
+    renderReports();
   </script>
   </body>
 </html>
+
